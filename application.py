@@ -3,9 +3,10 @@
 # $Env:FLASK_DEBUG=1
 
 # C:\sqlite\sqlite-tools-win32-x86-3340100\sqlite3.exe finance.db
-CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00, PRIMARY KEY(id));
-CREATE UNIQUE INDEX username ON users (username);
-
+# CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00, PRIMARY KEY(id));
+# CREATE UNIQUE INDEX username ON users (username);
+# URI
+# postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
 import os
 
 # for my local env variable and api key
