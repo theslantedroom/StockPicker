@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block title %}
+leaderboard
+{% endblock %}
+
+{% block main %}
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Cash</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.cash }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+
+    </table>
+{% endblock %}

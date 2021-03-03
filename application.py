@@ -3,10 +3,15 @@
 # $Env:FLASK_DEBUG=1
 
 # C:\sqlite\sqlite-tools-win32-x86-3340100\sqlite3.exe finance.db
-# CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00, PRIMARY KEY(id));
+
+
+# CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 100000.00, PRIMARY KEY(id));
 # CREATE UNIQUE INDEX username ON users (username);
-# URI
+# URI from Herohu Postgres
 # postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
+
+# for Postgress DB later
+# import psycopg2
 import os
 
 # for my local env variable and api key
@@ -45,14 +50,13 @@ app.jinja_env.filters["usd"] = usd
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_FILE_DIR"] = mkdtemp()
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///finance.db'
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
-# db = SQLAlchemy(app)
+
 
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
@@ -65,7 +69,7 @@ os.environ["DEBUSSY"] = "1"
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("TODO")
+    return apology("show")
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -88,7 +92,6 @@ def history():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Log user in"""
-
     # Forget any user_id
     session.clear()
 
@@ -192,7 +195,15 @@ def sell():
         return render_template("sell.html", stocks=stocks)
     if request.method == "POST":
         return apology("sell")
-    # return apology("TODO")
+
+
+@app.route("/leaderboard", methods=["GET", "POST"])
+def leaderboard():
+    """Sell shares of stock"""
+    users = db.execute("SELECT * FROM users")
+    if request.method == "GET":
+        stocks = {}
+        return render_template("leaderboard.html", users=users)
 
 
 
@@ -207,9 +218,13 @@ def errorhandler(e):
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
 
+
+# for development
 # if __name__ == '__main__':
 #     app.run(debug=True)
 
+
+# for production
 if __name__ == '__main__':
  app.debug = True
  port = int(os.environ.get("PORT", 8080))
