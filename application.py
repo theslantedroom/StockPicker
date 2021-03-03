@@ -3,6 +3,8 @@
 # $Env:FLASK_DEBUG=1
 
 # C:\sqlite\sqlite-tools-win32-x86-3340100\sqlite3.exe finance.db
+CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 10000.00, PRIMARY KEY(id));
+CREATE UNIQUE INDEX username ON users (username);
 
 import os
 
