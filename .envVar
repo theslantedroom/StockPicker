@@ -1,0 +1,3 @@
+API_KEY=pk_473080705c5e4a58bc11fd720ac9713c
+FLASK_APP="application.py"
+FLASK_DEBUG=1
