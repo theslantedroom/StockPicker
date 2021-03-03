@@ -1,0 +1,2 @@
+# StockPicker
+Virtual Stock Trading 
