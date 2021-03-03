@@ -8,15 +8,21 @@ leaderboard
     <table>
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Cash</th>
+                <th>Username</th>
+                
+                <th>Total Stock Holdings</th>
+                <th>Total CASH Position</th>
+                <th>NET WORTH</th>
             </tr>
         </thead>
         <tbody>
-            {% for user in users %}
+            {% for user in listUsers %}
                 <tr>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.cash }}</td>
+                    <td>{{ user[0] }}</td>
+                      
+                    <td>${{ user[1] }}</td>
+                    <td>${{ user[2] }}</td>
+                    <td>${{ user[3] }}</td>
                 </tr>
             {% endfor %}
         </tbody>

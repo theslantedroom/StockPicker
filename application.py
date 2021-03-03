@@ -4,15 +4,19 @@
 
 # C:\sqlite\sqlite-tools-win32-x86-3340100\sqlite3.exe finance.db
 
+# CREATE TABLE users (id INTEGER, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 100000.00, PRIMARY KEY(id));
 
-# CREATE TABLE users (id SERIAL, username TEXT NOT NULL, hash TEXT NOT NULL, cash NUMERIC NOT NULL DEFAULT 100000.00, PRIMARY KEY(id));
-# CREATE UNIQUE INDEX username ON users (username);
+# CREATE TABLE 'portfolio' ('id' integer NOT NULL, 'username' text, 'symbol' text NOT NULL, 'stockname' text, 'shares' integer NOT NULL, 'bookcost' real, 'total' real, 'date' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP);
+
 # URI from Herohu Postgres
 # postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
 
 # for Postgress DB later
 # import psycopg2
 import os
+import datetime
+x = datetime.datetime.now()
+print(x)
 
 # for my local env variable and api key
 from dotenv import load_dotenv
@@ -69,7 +73,26 @@ os.environ["DEBUSSY"] = "1"
 @login_required
 def index():
     """Show portfolio of stocks"""
-    return apology("show")
+    userId = session["user_id"]
+    # Query  database for INFO
+    rows = db.execute("SELECT * FROM portfolio WHERE id = :user",
+                          user=userId)
+    cash = db.execute("SELECT cash FROM users WHERE id = :user",
+                          user=userId)[0]['cash']
+
+    # pass  list of lists to the template page
+    total = cash
+    stocks = []
+    for index, row in enumerate(rows):
+        details = lookup(row['symbol'])
+
+        # create a list 
+        currentStock = list((details['symbol'], details['name'], row['shares'], details['price'], round(details['price'] * row['shares'], 2)))
+        # add the list to the stocks list
+        stocks.append(currentStock)
+        total += stocks[index][4]
+
+    return render_template("index.html", stocks=stocks, cash=round(cash, 2), total=round(total, 2))
 
 
 @app.route("/buy", methods=["GET", "POST"])
@@ -78,8 +101,60 @@ def buy():
     """Buy shares of stock"""
     if request.method == "GET":
         return render_template("buy.html")
+
     if request.method == "POST":
-        return apology("buy")
+        # store data from buy form
+        amount = float(request.form.get("amount"))
+        symbol = request.form.get("symbol")
+
+        if not lookup(symbol):
+            return apology("Could not find the stock")
+        if not amount:
+            return apology("Must buy at least one stock")
+        quantity = int(request.form.get("amount"))
+
+        Userid = session["user_id"]
+        username = str(db.execute("SELECT username FROM users WHERE id = :id", id=Userid)[0]['username'])
+        # print(type(username[0]['username'])) = str
+
+        # Calculate total value of the transaction
+        bookcost = lookup(symbol)['price']
+        company = lookup(symbol)['name']
+        totalCost = amount * bookcost
+        print(totalCost)
+
+        print("hello id")
+        print(session["user_id"])
+        # Check if current CASH is enough
+        
+        currentCash = db.execute("SELECT cash FROM users WHERE id = :user", user=Userid)[0]['cash']
+        print(currentCash)
+        if currentCash < totalCost:
+            return apology("You don't have enough money")
+
+        # Check if user already owns this stocks 
+        stocktobuy = db.execute("SELECT shares FROM portfolio WHERE id = :id AND symbol = :symbol", id=Userid, symbol=symbol)
+        print(stocktobuy)
+
+        # Insert new row into the stock table
+        if not stocktobuy:
+            db.execute("INSERT INTO portfolio(id, username, symbol, stockname, shares) VALUES (:id, :username, :symbol, :stockname, :shares)", id=Userid, username=username, symbol=symbol, stockname=company, shares=amount)
+            # update caluated values
+            # bookcost = 0
+            # total = 0
+        #add to existing holdings
+        else:
+            amount += stocktobuy[0]['shares']
+            db.execute("UPDATE portfolio SET shares = :shares WHERE id = :id AND symbol = :symbol",
+                id=Userid, symbol=symbol, shares=amount)
+
+        # update user cash
+        remainingCash = currentCash - totalCost
+        db.execute("UPDATE users SET cash = :cash WHERE id = :user", cash=remainingCash, user=Userid)
+
+
+        # Update history table
+        return redirect("/")
     # return apology("TODO")
 
 @app.route("/history")
@@ -95,6 +170,7 @@ def login():
     # Forget any user_id
     session.clear()
 
+
     # User reached route via POST (as by submitting a form via POST)
     if request.method == "POST":
 
@@ -109,13 +185,14 @@ def login():
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
 
-
-        # Ensure username exists and password is correct
+        # username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
             return apology("invalid username and/or password", 403)
 
-        # Remember which user has logged in
+        # Remember user id that has logged in
         session["user_id"] = rows[0]["id"]
+        # print("hello id")
+        # print(session["user_id"])
 
         # Redirect user to home page
         return redirect("/")
@@ -198,12 +275,45 @@ def sell():
 
 
 @app.route("/leaderboard", methods=["GET", "POST"])
-def leaderboard():
-    """Sell shares of stock"""
-    users = db.execute("SELECT * FROM users")
+def leaderboard():  
+    
     if request.method == "GET":
-        stocks = {}
-        return render_template("leaderboard.html", users=users)
+        users = db.execute("SELECT username FROM users") 
+        listUsers = []
+        for user in users:
+            userdata = list((user['username'], 0, 0, 0))
+            listUsers.append(userdata)
+        print('listuser',listUsers)
+        # query database for a list of all the users /list of dicts
+        
+        for user in listUsers:
+            holdingValue = 0
+            holdings = db.execute("SELECT * FROM portfolio WHERE username = :username", username=user[0])
+            cash = db.execute("SELECT cash FROM users WHERE username = :username", username=user[0])[0]['cash']
+            user[2] = cash
+            print(user)
+            print(holdings) 
+            print(cash)
+            for stock in holdings:
+                # print(stock)
+                stockPrice = lookup(stock['symbol'])['price']
+                # print('price ',stockPrice)
+                value = stock['shares'] * stockPrice
+                # print('value ',value)
+                holdingValue += value
+                user[1] = holdingValue
+                
+            # print('holdingValue ',holdingValue)
+        for user in listUsers:
+            user[3] = user[2] + user[1]
+
+
+   
+
+
+        
+    return render_template("leaderboard.html", listUsers=listUsers)
+
 
 
 
