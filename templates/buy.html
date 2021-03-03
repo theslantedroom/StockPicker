@@ -5,12 +5,13 @@
 {% endblock %}
 
 {% block main %}
+<h2>BUY STOCKS</h2>
     <form action="/buy" method="post">
         <div class="form-group">
             <input autocomplete="off" autofocus class="form-control" name="symbol" placeholder="Symbol" type="text">
         </div>
         <div class="form-group">
-            <input autocomplete="off" autofocus class="form-control" name="amount" placeholder="Amount" type="number">
+            <input min="1" autocomplete="off" autofocus class="form-control" name="amount" placeholder="Amount" type="number">
         </div>
         <button id="submit" class="btn btn-primary" type="submit">Buy</button>
     </form><br><br>

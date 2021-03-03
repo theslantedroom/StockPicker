@@ -8,6 +8,8 @@
 
 # CREATE TABLE 'portfolio' ('id' integer NOT NULL, 'username' text, 'symbol' text NOT NULL, 'stockname' text, 'shares' integer NOT NULL, 'bookcost' real, 'total' real, 'date' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP);
 
+# CREATE TABLE 'history' ('id' integer NOT NULL, 'symbol' text NOT NULL, 'date' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, 'shares' integer NOT NULL, 'value' numeric NOT NULL );
+
 # URI from Herohu Postgres
 # postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
 
@@ -39,7 +41,6 @@ app = Flask(__name__)
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
-
 # Ensure responses aren't cached
 @app.after_request
 def after_request(response):
@@ -47,7 +48,6 @@ def after_request(response):
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
     return response
-
 
 # Custom filter
 app.jinja_env.filters["usd"] = usd
@@ -61,13 +61,11 @@ Session(app)
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
 
-
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
     raise RuntimeError("API_KEY not set")
 # print(os.environ['API_KEY'])
 os.environ["DEBUSSY"] = "1"
-
 
 @app.route("/")
 @login_required
@@ -83,6 +81,7 @@ def index():
     # pass  list of lists to the template page
     total = cash
     stocks = []
+    
     for index, row in enumerate(rows):
         details = lookup(row['symbol'])
 
@@ -92,8 +91,16 @@ def index():
         stocks.append(currentStock)
         total += stocks[index][4]
 
-    return render_template("index.html", stocks=stocks, cash=round(cash, 2), total=round(total, 2))
+    stocksConverted = stocks
+    for key, stock in enumerate(stocks):
+        # convert to formated string fro display
+        stocksConverted[key][3] = "${:,.2f}".format(stocks[key][3])
+        stocksConverted[key][4] = "${:,.2f}".format(stocks[key][4])
+        
+    cashConverted = "${:,.2f}".format(cash)
+    totalConverted = "${:,.2f}".format(total)
 
+    return render_template("index.html", stocks=stocksConverted, cash=cashConverted, total=totalConverted)
 
 @app.route("/buy", methods=["GET", "POST"])
 @login_required
@@ -104,14 +111,19 @@ def buy():
 
     if request.method == "POST":
         # store data from buy form
-        amount = float(request.form.get("amount"))
+        
+        stringAmount = request.form.get("amount")
+        if float(stringAmount) < 0:
+            return apology("Must buy at least one stock")
         symbol = request.form.get("symbol")
+        
+        try:
+            buyCount = float(stringAmount)
+        except:
+            return apology("Must buy at least one stock")
 
         if not lookup(symbol):
             return apology("Could not find the stock")
-        if not amount:
-            return apology("Must buy at least one stock")
-        quantity = int(request.form.get("amount"))
 
         Userid = session["user_id"]
         username = str(db.execute("SELECT username FROM users WHERE id = :id", id=Userid)[0]['username'])
@@ -120,7 +132,7 @@ def buy():
         # Calculate total value of the transaction
         bookcost = lookup(symbol)['price']
         company = lookup(symbol)['name']
-        totalCost = amount * bookcost
+        totalCost = buyCount * bookcost
         print(totalCost)
 
         print("hello id")
@@ -138,31 +150,46 @@ def buy():
 
         # Insert new row into the stock table
         if not stocktobuy:
-            db.execute("INSERT INTO portfolio(id, username, symbol, stockname, shares) VALUES (:id, :username, :symbol, :stockname, :shares)", id=Userid, username=username, symbol=symbol, stockname=company, shares=amount)
+            db.execute("INSERT INTO portfolio(id, username, symbol, stockname, shares) VALUES (:id, :username, :symbol, :stockname, :shares)", 
+                        id=Userid, username=username, symbol=symbol, stockname=company, shares=buyCount)
             # update caluated values
             # bookcost = 0
             # total = 0
         #add to existing holdings
         else:
-            amount += stocktobuy[0]['shares']
+            newTotal = buyCount
+            newTotal += stocktobuy[0]['shares']
             db.execute("UPDATE portfolio SET shares = :shares WHERE id = :id AND symbol = :symbol",
-                id=Userid, symbol=symbol, shares=amount)
+                id=Userid, symbol=symbol, shares=newTotal)
 
         # update user cash
         remainingCash = currentCash - totalCost
         db.execute("UPDATE users SET cash = :cash WHERE id = :user", cash=remainingCash, user=Userid)
 
-
         # Update history table
+        db.execute("INSERT INTO history(id, symbol, shares, value) VALUES (:id, :symbol, :shares, :value)",
+                id=session["user_id"], symbol=symbol, shares=buyCount, value=totalCost)
+
         return redirect("/")
-    # return apology("TODO")
 
 @app.route("/history")
 @login_required
 def history():
     """Show history of transactions"""
-    return apology("TODO")
 
+    # query database with the transactions history
+    rows = db.execute("SELECT * FROM history WHERE id = :id", id=session["user_id"])
+
+    # pass a list of lists to the template page
+    history = []
+    for row in rows:
+        tradeDetails = lookup(row['symbol'])
+        trade = list((tradeDetails['symbol'], tradeDetails['name'], row['shares'], "${:,.2f}".format(row['value']), row['date']))
+        history.append(trade)
+        
+    
+    # redirect user to index page
+    return render_template("history.html", history=history)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -201,7 +228,6 @@ def login():
     else:
         return render_template("login.html")
 
-
 @app.route("/logout")
 def logout():
     """Log user out"""
@@ -211,7 +237,6 @@ def logout():
 
     # Redirect user to login form
     return redirect("/")
-
 
 @app.route("/quote", methods=["GET", "POST"])
 @login_required
@@ -226,7 +251,6 @@ def quote():
             return apology("That stock does not exist")
 
         return render_template("quote.html", stock=stock)
-
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -259,19 +283,55 @@ def register():
 
         return redirect("/")
 
-
-    
-
-
 @app.route("/sell", methods=["GET", "POST"])
 @login_required
 def sell():
     """Sell shares of stock"""
     if request.method == "GET":
-        stocks = {}
-        return render_template("sell.html", stocks=stocks)
+        # query database with the transactions history
+        rows = db.execute("SELECT symbol, shares FROM portfolio WHERE id = :id", id=session["user_id"])
+
+        # create a dictionary with the availability of the stocks
+        stocksHeld = {}
+        for row in rows:
+            stocksHeld[row['symbol']] = row['shares']
+
+        return render_template("sell.html", stocksHeld=stocksHeld)
+
+
     if request.method == "POST":
-        return apology("sell")
+        # collect relevant informations
+        sellCount=int(request.form.get("sellCount"))
+        symbol=request.form.get("symbol")
+        price=lookup(symbol)["price"]
+        value=round(price*sellCount)
+
+        # Update portfolio table
+        heldbefore = db.execute("SELECT shares FROM portfolio WHERE id = :user AND symbol = :symbol", symbol=symbol, user=session["user_id"])[0]['shares']
+        heldafter = heldbefore - sellCount
+
+        # stop the transaction if the user does not have enough stocks
+        if heldafter < 0:
+            return apology("You hold that stock, but not that many!")
+
+        # delete stock from table if we sold out all stocks
+        if heldafter == 0:
+            db.execute("DELETE FROM portfolio WHERE id = :user AND symbol = :symbol", symbol=symbol, user=session["user_id"])
+        # else update with new count
+        else:
+            db.execute("UPDATE portfolio SET shares = :shares WHERE id = :user AND symbol = :symbol",
+                          symbol=symbol, user=session["user_id"], shares=heldafter)
+        #update user's cash
+        cash = db.execute("SELECT cash FROM users WHERE id = :user",
+                          user=session["user_id"])[0]['cash']
+        cashRemaining = cash + (price * sellCount)
+        db.execute("UPDATE users SET cash = :cash WHERE id = :user",
+                          cash=cashRemaining, user=session["user_id"])
+        # Update history table
+        db.execute("INSERT INTO history(id, symbol, shares, value) VALUES (:id, :symbol, :shares, :value)",
+                id=session["user_id"], symbol=symbol, shares=-sellCount, value=value)
+
+        return redirect("/")
 
 
 @app.route("/leaderboard", methods=["GET", "POST"])
@@ -310,14 +370,8 @@ def leaderboard():
             user[3] = "${:,.2f}".format(user[1])
             user[4] = "${:,.2f}".format(user[2])
             user[5] = "${:,.2f}".format(net)
-   
 
-
-        
     return render_template("leaderboard.html", listUsers=listUsers)
-
-
-
 
 def errorhandler(e):
     """Handle error"""
@@ -325,11 +379,9 @@ def errorhandler(e):
         e = InternalServerError()
     return apology(e.name, e.code)
 
-
 # Listen for errors
 for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
-
 
 # for development
 # if __name__ == '__main__':
