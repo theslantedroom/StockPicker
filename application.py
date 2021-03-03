@@ -369,9 +369,9 @@ def leaderboard():
             # print('holdingValue ',holdingValue)
         for user in listUsers:
             net = round(user[2] + user[1],0)
-            user[3] = "${:,.2f}".format(user[1])
-            user[4] = "${:,.2f}".format(user[2])
-            user[5] = "${:,.2f}".format(net)
+            user[3] = "${:,.0f}".format(user[1])
+            user[4] = "${:,.0f}".format(user[2])
+            user[5] = "${:,.0f}".format(net)
 
     return render_template("leaderboard.html", listUsers=listUsers)
 
@@ -386,12 +386,12 @@ for code in default_exceptions:
     app.errorhandler(code)(errorhandler)
 
 # for development
-# if __name__ == '__main__':
-#     app.run(debug=True)
+if __name__ == '__main__':
+    app.run(debug=True)
 
 
 # for production
-if __name__ == '__main__':
- app.debug = True
- port = int(os.environ.get("PORT", 8080))
- app.run(host="0.0.0.0", port=port)
+# if __name__ == '__main__':
+#  app.debug = True
+#  port = int(os.environ.get("PORT", 8080))
+#  app.run(host="0.0.0.0", port=port)
