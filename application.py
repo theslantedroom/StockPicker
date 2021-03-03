@@ -113,16 +113,25 @@ def buy():
         # store data from buy form
         
         stringAmount = request.form.get("amount")
-        if float(stringAmount) < 0:
-            return apology("Must buy at least one stock")
-        symbol = request.form.get("symbol")
+
+        try:
+            if float(stringAmount) < 0:
+                print(1)
+                return apology("Must buy at least one stock")
+        except:
+            print(2)
+            return apology("Must buy at least one stock", 400)
+
+        symbol = request.form.get("symbol").upper()
         
         try:
             buyCount = float(stringAmount)
         except:
+            print(3)
             return apology("Must buy at least one stock")
 
         if not lookup(symbol):
+            print(4)
             return apology("Could not find the stock")
 
         Userid = session["user_id"]
