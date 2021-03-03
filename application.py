@@ -10,8 +10,7 @@
 
 # CREATE TABLE 'history' ('id' integer NOT NULL, 'symbol' text NOT NULL, 'date' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, 'shares' integer NOT NULL, 'value' numeric NOT NULL );
 
-# URI from Herohu Postgres
-# postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
+
 
 # for Postgress DB later
 # import psycopg2
@@ -60,6 +59,9 @@ Session(app)
 
 # Configure CS50 Library to use SQLite database
 db = SQL("sqlite:///finance.db")
+
+# for postgress of heroku deployment
+# db = SQL(os.getenv("DATABASE_URL"))
 
 # Make sure API key is set
 if not os.environ.get("API_KEY"):
