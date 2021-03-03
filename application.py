@@ -29,7 +29,7 @@ from flask_sqlalchemy import SQLAlchemy
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
-
+from operator import itemgetter
 from helpers import apology, login_required, lookup, usd
 
 # Configure application
@@ -49,12 +49,11 @@ def after_request(response):
 # Custom filter
 app.jinja_env.filters["usd"] = usd
 
-# Configure session to use filesystem (instead of signed cookies)
-
-# for postgres deployment
+# for postgress
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Configure session to use filesystem (instead of signed cookies)
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///finance.db"
 app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
@@ -62,15 +61,10 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure CS50 Library to use SQLite database
-# db = SQL("sqlite:///finance.db")
+db = SQL("sqlite:///finance.db")
 
 # for postgress of heroku deployment
 # db = SQL(os.getenv('DATABASE_URL'))
-db = SQL('postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89')
-
-
-# 
-
 
 # db = SQLAlchemy(app)
 
@@ -392,8 +386,11 @@ def leaderboard():
             user[3] = "${:,.0f}".format(user[1])
             user[4] = "${:,.0f}".format(user[2])
             user[5] = "${:,.0f}".format(net)
+        
+        sortedLeader = sorted(listUsers, key=itemgetter(2), reverse=True)
+        print(listUsers)
 
-    return render_template("leaderboard.html", listUsers=listUsers)
+    return render_template("leaderboard.html", listUsers=sortedLeader)
 
 def errorhandler(e):
     """Handle error"""
