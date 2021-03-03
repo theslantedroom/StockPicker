@@ -5,6 +5,6 @@ git add -A
 
 git status
 git commit -m "push update"
-git push
+ECHO  to push enter 'git push'
 
 
