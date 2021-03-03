@@ -10,8 +10,6 @@
 
 # CREATE TABLE 'history' ('id' integer NOT NULL, 'symbol' text NOT NULL, 'date' datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, 'shares' integer NOT NULL, 'value' numeric NOT NULL );
 
-
-
 # for Postgress DB later
 # import psycopg2
 import os
