@@ -281,7 +281,7 @@ def leaderboard():
         users = db.execute("SELECT username FROM users") 
         listUsers = []
         for user in users:
-            userdata = list((user['username'], 0, 0, 0))
+            userdata = list((user['username'], 0, 0, 'stock','cash','networth'))
             listUsers.append(userdata)
         print('listuser',listUsers)
         # query database for a list of all the users /list of dicts
@@ -290,7 +290,7 @@ def leaderboard():
             holdingValue = 0
             holdings = db.execute("SELECT * FROM portfolio WHERE username = :username", username=user[0])
             cash = db.execute("SELECT cash FROM users WHERE username = :username", username=user[0])[0]['cash']
-            user[2] = cash
+            user[2] = round(cash,2)
             print(user)
             print(holdings) 
             print(cash)
@@ -301,13 +301,15 @@ def leaderboard():
                 value = stock['shares'] * stockPrice
                 # print('value ',value)
                 holdingValue += value
-                user[1] = holdingValue
+                user[1] = round(holdingValue, 2)
                 
+                # user[1] = round(holdingValue, 2)
             # print('holdingValue ',holdingValue)
         for user in listUsers:
-            user[3] = user[2] + user[1]
-
-
+            net = round(user[2] + user[1],0)
+            user[3] = "${:,.2f}".format(user[1])
+            user[4] = "${:,.2f}".format(user[2])
+            user[5] = "${:,.2f}".format(net)
    
 
 
