@@ -14,6 +14,7 @@
 # import psycopg2
 import os
 import datetime
+import psycopg2
 x = datetime.datetime.now()
 print(x)
 
@@ -54,7 +55,7 @@ app.jinja_env.filters["usd"] = usd
 # app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Configure session to use filesystem (instead of signed cookies)
-app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///finance.db"
+# app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///finance.db"
 app.config["SESSION_FILE_DIR"] = mkdtemp()
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
@@ -64,8 +65,8 @@ Session(app)
 db = SQL("sqlite:///finance.db")
 
 # for postgress of heroku deployment
-# db = SQL(os.getenv('DATABASE_URL'))
-
+# db = SQL(os.getenv('DATABASE_URI'))
+# db = SQL('DATABASE_URI')
 # db = SQLAlchemy(app)
 
 # Make sure API key is set
@@ -73,6 +74,8 @@ if not os.environ.get("API_KEY"):
     raise RuntimeError("API_KEY not set")
 # print(os.environ['API_KEY'])
 os.environ["DEBUSSY"] = "1"
+
+print('xxxxxxxxxxxxxxx')
 
 @app.route("/")
 @login_required

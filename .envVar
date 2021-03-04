@@ -1,3 +1,5 @@
 API_KEY=pk_473080705c5e4a58bc11fd720ac9713c
 FLASK_APP="application.py"
 FLASK_DEBUG=1
+DATABASE_URL=postgres://ouvrlcvssdnked:030e4ae2e3fa72acc293d7bd63061b3cb125563b3db8c47f259fa8a6304ecb8c@ec2-54-146-73-98.compute-1.amazonaws.com:5432/d6jhrc78o0fu89
+
