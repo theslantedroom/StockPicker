@@ -317,7 +317,10 @@ def sell():
 
     if request.method == "POST":
         # collect relevant informations
-        sellCount=int(request.form.get("sellCount"))
+        try:
+            sellCount=int(request.form.get("sellCount"))
+        except:
+            return apology("you must sell at least 0ne stock")
         symbol=request.form.get("symbol")
         price=lookup(symbol)["price"]
         value=round(price*sellCount)
