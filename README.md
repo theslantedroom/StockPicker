@@ -1,2 +1,2 @@
-# StockPicker
-Virtual Stock Trading 
+# StockPicker Redrect
+
